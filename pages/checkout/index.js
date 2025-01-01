@@ -33,24 +33,46 @@ export default function Checkout() {
 
   const handelPayment = async () => {
     const result = {
-      id_user: userInfo.uid,
-      list_item: data.arrayCart,
-      date: getDate(),
-      total: total + 10000,
-      address: {
-        home,
-        wards,
-        district,
-        city,
-      },
-      payment: "delivery",
+		orderCode: Number(String(Date.now()).slice(-6)),
+      	id_user: userInfo.uid,
+      	list_item: data.arrayCart,
+      	date: getDate(),
+      	amount: total + 10000,
+		description: `Thanh toan hoa don`,
+		cancelUrl: "http://localhost:3000/cancel",
+		returnUrl: "http://localhost:3000/success",
+      	address: {
+			home,
+			wards,
+			district,
+			city,
+		},
+    	payment: "delivery",
     };
-    const res = await axios.post("/api/payment", result);
-    const newData = await res.data;
+	if (bank) {
+		 const res = await axios.post("/api/payment", result);
+		const newData = await res.data;
     if (newData.result) {
       emptyCart();
       setShowModal(true);
     }
+	} else {
+		const res = await axios.post("/api/payment/create", result, {
+			headers: {
+			  "Content-Type": "application/json",
+			},
+		  });
+		emptyCart();
+		setTimeout(() => {
+			// wait 1s
+		}, 1000);
+		window.location.href = res.data.data.checkoutUrl;
+	}
+    // const newData = await res.data;
+    // if (newData.result) {
+    //   emptyCart();
+    //   setShowModal(true);
+    // }
   };
   useEffect(() => {
     async function fectchData() {
@@ -154,6 +176,8 @@ export default function Checkout() {
             <h2 className="oswald uppercase text-xl :">
               phương thức thanh toán:
             </h2>
+
+
             <div
               onClick={() => setBank(true)}
               className={`${
@@ -165,6 +189,8 @@ export default function Checkout() {
               <span>Thanh toán khi nhận hàng</span>
               <MdOutlinePayments className="w-7 h-7" />
             </div>
+
+
             <div
               onClick={() => setBank(false)}
               className={`${
@@ -173,9 +199,10 @@ export default function Checkout() {
                   : "border-black bg-black text-white"
               } cursor-pointer font-bold flex items-center justify-between my-2  border-2 px-2 py-4 rounded-[6px]`}
             >
-              Thanh toán visa
+              Thanh toán qua QR Code
               <MdPayment className="w-7 h-7" />
             </div>
+
           </div>
           <div>
             <input
@@ -190,8 +217,15 @@ export default function Checkout() {
               Chính Sách Hoạt Động của KFC Việt Nam
             </span>
           </div>
+
+
           {bank === false ? (
-            <Payment callback={handelPayment} value={total + 10} />
+            <div
+				onClick={handelPayment}
+				className="text-center cursor-pointer btn-shadow py-4 rounded-full bg-[#28a745] font-bold text-white my-10"
+			>
+				Tiến hành thanh toán
+			</div>
           ) : (
             <div
               onClick={handelPayment}
@@ -200,6 +234,8 @@ export default function Checkout() {
               Đặt hàng
             </div>
           )}
+
+
         </div>
       </div>
       <div className="flex-40 p-2">
